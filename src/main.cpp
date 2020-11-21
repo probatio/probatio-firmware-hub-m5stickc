@@ -4,13 +4,7 @@
 // Needs hardcoding of IP, port, and SSID
 
 #include <M5StickC.h>
-// #include "Wire.h"
-// #include "Block.h"
-// #include "BlockValue.h"
-// #include "auxData.h"
-// #include "probatio_defs.h"
-
-#include "auxiliaryFunctions.h"
+#include "AuxFunctions.h"
 
 #define SOFTAP 0
 #define D0 1

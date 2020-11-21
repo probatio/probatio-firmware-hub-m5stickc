@@ -1,11 +1,11 @@
-#include "auxiliaryFunctions.h"
+#include "AuxFunctions.h"
 
-char ssid[] = "APT_1206";
-char pass[] = "!jul1nh4@FRED*";
+// char ssid[] = "APT_1206";
+// char pass[] = "!jul1nh4@FRED*";
 
 WiFiUDP udp;
-IPAddress destIP(192, 168, 1, 116);
-const unsigned int destPort = 7000;
+IPAddress destIP(ip_1, ip_2, ip_3, ip_4);
+// const unsigned int destPort = 7000;
 
 int cycle = 0;
 

@@ -4,7 +4,6 @@
 #include "Wire.h"
 #include "Block.h"
 #include "BlockValue.h"
-// #include "auxData.h"
 #include "probatio_defs.h"
 
 #include <WiFi.h>
@@ -12,11 +11,10 @@
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include "esp_wifi.h"
+#include "wifi_settings.h"
 
-//extern WiFiUDP udp;
-//
-extern char ssid[];
-extern char pass[];
+//extern char ssid[];
+//extern char pass[];
 
 extern const unsigned int destPort;
 
