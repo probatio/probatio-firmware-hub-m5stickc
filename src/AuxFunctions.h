@@ -6,12 +6,12 @@
 #include "BlockValue.h"
 #include "probatio_defs.h"
 
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiUdp.h>
-#include <OSCMessage.h>
-#include "esp_wifi.h"
-#include "wifi_settings.h"
+// #include <WiFi.h>
+// #include <WiFiClient.h>
+// #include <WiFiUdp.h>
+// #include <OSCMessage.h>
+// #include "esp_wifi.h"
+// #include "wifi_settings.h"
 
 //extern char ssid[];
 //extern char pass[];
