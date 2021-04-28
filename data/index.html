@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+
+    <h1>%DEVICENAME%<h1>
+            <p>%STATUS%</p>
+            <h2>Settings:</h2>
+            <div class="container">
+
+                <form action="" method="post">
+                    <div class="row">
+                        <h3>Network: </h3>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="SSID">SSID</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="text" id="SSID" name="SSID" placeholder="Network SSID..."
+                                value="%CURRENTSSID%">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="password">SSID Password</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="password" id="password" name="password" placeholder="Network password..." value="%CURRENTPSK%">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <h3>Probatio password:</h3>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="APpasswd">New password</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="password" id="APpasswd" name="APpasswd"
+                                placeholder="(leave empty to keep current password)">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="APpasswdValidate">Retype new password</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="password" id="APpasswdValidate" name="APpasswdValidate"
+                                placeholder="(leave empty to keep current password)">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <h3>OSC send settings:</h3>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="oscIP">OSC IP</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="text" id="oscIP" name="oscIP" pattern="\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b" placeholder="0.0.0.0" value="%CURRENTOSC%">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-25">
+                            <label for="oscPORT">Primary port</label>
+                        </div>
+                        <div class="col-75">
+                            <input type="number" id="oscPORT" name="oscPORT" placeholder="0000" min="0" max="99999" value="%CURRENTPORT%">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <input type="submit" onclick="alert('Sending settings to Probatio')" value="Save">
+                    </div>
+                </form>
+
+            </div>
+
+            <h2>Network info:</h2>
+            <div class="container">
+                <div>
+                    <table>
+                        <tr>
+                            <td>Current SSID:</td>
+                            <td>%CURRENTSSID%</td>
+                        </tr>
+                        <tr>
+                            <td>Current IP address (STA):</td>
+                            <td>%CURRENTIP%</td>
+                        </tr>
+                        <tr>
+                            <td>Access Point IP:</td>
+                            <td>%CURRENTAPIP%</td>
+                        </tr>
+                        <tr>
+                            <td>Station (STA) MAC:</td>
+                            <td>%CURRENTSTAMAC%</td>
+                        </tr>
+                        <tr>
+                            <td>Access Point MAC:</td>
+                            <td>%CURRENTAPMAC%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <p><a href="/scan"><button class="button">scan for networks</button></a></p>
+
+            <h2>Instrument info:</h2>
+            <div class="container">
+                <table>
+                    <tr>
+                        <td>ID (serial #):</td>
+                        <td>%PROBATIOID%</td>
+                    </tr>
+                    <tr>
+                        <td>GuitarAMI module author:</td>
+                        <td>%PROBATIOAUTH%</td>
+                    </tr>
+                    <tr>
+                        <td>Institution:</td>
+                        <td>%PROBATIOINST%</td>
+                    </tr>
+                    <tr>
+                        <td>Firmware version: </td>
+                        <td>%PROBATIOVER%</td>
+                    </tr>
+                </table>
+            </div>
+
+            <br><br>
+                <form action="" method="post">
+                    <input type="submit" float="center" name="reboot" value="Close and reboot">
+                </form>
+            <!-- <button type="button" onclick="alert('Rebooting. Please close this window.')">Close and reboot</button> --> 
+
+            <br><br>
+
+</body>
+
+</html>

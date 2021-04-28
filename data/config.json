@@ -1,0 +1,12 @@
+{
+    "id": 5,
+    "author": "Edu Meneses",
+    "institution": "IDMIL (2021)",
+    "APpasswd": "mappings",
+    "lastConnectedNetwork": "tstick_network",
+    "lastStoredPsk": "mappings",
+    "firmware": 210428,
+    "oscIP": "192.168.0.1",
+    "oscPORT": 8000,
+    "localPORT": 8000
+}

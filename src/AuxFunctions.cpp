@@ -1,11 +1,6 @@
 #include "AuxFunctions.h"
 
-// char ssid[] = "APT_1206";
-// char pass[] = "!jul1nh4@FRED*";
-
 WiFiUDP udp;
-IPAddress destIP(ip_1, ip_2, ip_3, ip_4);
-// const unsigned int destPort = 7000;
 
 int cycle = 0;
 
@@ -136,25 +131,29 @@ void sendConsolidatedSerialMessage() {
    =============
 */
 
-void sendIndividualOSCMessages() {
-  for (int i = 0; i < QUANTITY_BLOCKS; i++) {
-    if (blocks[i]->isConnected) {
-      //      String message_address = "/probatio_m5/";
-      //      String block_address = String(blocks[i]->string_name);
-      //      String composed_address = String(message_address + block_address);
-      //      char char_address[composed_address.length()];
-      //      composed_address.toCharArray(char_address, composed_address.length());
-      OSCMessage oscMsg("/probatio_m5/");
-      udp.beginPacket(destIP, destPort);
-      for (int j = 0; j < blocks[i]->quantity; i++) {
-        oscMsg.add((int)blocks[i]->values[j].getValue());
-      }
-      oscMsg.send(udp);
-      if (isConnected) {
-        udp.endPacket();
-      }
+void sendIndividualOSCMessages(char* deviceName, char* destIP, int32_t destPort) {
+    IPAddress oscIP;
+    IPAddress emptyIP(0,0,0,0);
+    if (oscIP.fromString(destIP) && oscIP != emptyIP) {
+        for (int i = 0; i < QUANTITY_BLOCKS; i++) {
+            if (blocks[i]->isConnected) {
+                //      String message_address = "/probatio_m5/";
+                //      String block_address = String(blocks[i]->string_name);
+                //      String composed_address = String(message_address + block_address);
+                //      char char_address[composed_address.length()];
+                //      composed_address.toCharArray(char_address, composed_address.length());
+                OSCMessage oscMsg(deviceName);
+                udp.beginPacket(oscIP, destPort);
+                for (int j = 0; j < blocks[i]->quantity; i++) {
+                    oscMsg.add((int)blocks[i]->values[j].getValue());
+                }
+                oscMsg.send(udp);
+                if (isConnected) {
+                    udp.endPacket();
+                }
+            }
+        }
     }
-  }
 }
 
 /*
@@ -163,18 +162,20 @@ void sendIndividualOSCMessages() {
    =============
 */
 
-void sendConsolidatedOSCMessage() {
-  OSCMessage oscMsg("/probatio_m5");
-  udp.beginPacket(destIP, destPort);
-
-  for (int i = 0; i < BUFFER_SIZE; i++) {
-    oscMsg.add((int)buffer[i]);
-  }
-
-  oscMsg.send(udp);
-  if (isConnected) {
-    udp.endPacket();
-  }
+void sendConsolidatedOSCMessage(char* deviceName, char* destIP, int32_t destPort) {
+    IPAddress oscIP;
+    IPAddress emptyIP(0,0,0,0);
+    if (oscIP.fromString(destIP) && oscIP != emptyIP) {
+        OSCMessage oscMsg(deviceName);
+        udp.beginPacket(oscIP, destPort);
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            oscMsg.add((int)buffer[i]);
+        }
+        oscMsg.send(udp);
+        if (isConnected) {
+            udp.endPacket();
+        }
+    }
 }
 
 /*

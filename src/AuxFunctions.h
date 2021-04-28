@@ -11,7 +11,7 @@
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
 #include "esp_wifi.h"
-#include "wifi_settings.h"
+//#include "wifi_settings.h"
 
 //extern char ssid[];
 //extern char pass[];
@@ -38,8 +38,8 @@ void formatBufferWithBlocks();
 void addActiveBlockValues(byte blockId, byte arraySize, BlockValue values[]);
 void addInactiveBlockMessage(byte blockId, byte quantity);
 void sendConsolidatedSerialMessage();
-void sendIndividualOSCMessages();
-void sendConsolidatedOSCMessage();
+void sendIndividualOSCMessages(char* deviceName,char* destIP,int32_t destPort);
+void sendConsolidatedOSCMessage(char* deviceName,char* destIP,int32_t destPort);
 void debugDumpBuffer();
 
 #endif
