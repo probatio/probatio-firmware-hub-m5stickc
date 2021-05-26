@@ -6,7 +6,7 @@
 #define MODULE_H
 
 #include <FS.h>
-#include <ArduinoJson.h>        // https://github.com/bblanchon/ArduinoJson
+#include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson
 #include <SPIFFS.h>
 #include <esp_wifi.h>
 #include <WiFiUdp.h>

@@ -2,12 +2,26 @@
 // Filipe Calegario (2020)
 // Edu Meneses - IDMIL - McGill University (2021)
 
-const unsigned int firmware_version = 210428;
+const unsigned int firmware_version = 210525;
 
 #include <Arduino.h>
 
 #include <Update.h>     // For OTA over web server (manual .bin upload)
 #include "mdns.h"
+
+// Libmapper-arduino (https://github.com/mathiasbredholt/libmapper-arduino)
+#include <mapper_cpp.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+//#include <iterator> // for ostream_iterator
+mapper::Device* dev;
+mapper::Signal signal;
+//std::vector<mapper::Signal> signals;
+//const int NUM_SIGNALS = 32;
+int lm_min = 0;
+int lm_max = 256;
+std::vector<int> lmbuffer;
 
 
 // Direct OSC Version: sends 44 integers for each sensor
@@ -36,7 +50,7 @@ const unsigned int firmware_version = 210428;
 //////////////
 
   struct Settings {
-    int id = 6;
+    int id = 2;
     char author[20] = {'E','d','u','_','M','e','n','e','s','e','s'};
     char institution[20] = {'I','D','M','I','L'};
     char APpasswd[15] = {'m','a','p','p','i','n','g','s'};
@@ -46,8 +60,8 @@ const unsigned int firmware_version = 210428;
     char oscIP[17] = {'0','0','0','0'};
     int32_t oscPORT = 8000;
     int32_t localPORT = 8000;
-  } settings;
-  
+    } settings;
+
 
 ////////////////////////////////////////////////////////////
 // Include GuitarAMI WiFi and json module functions files //
@@ -89,6 +103,7 @@ void setup() {
 
     // Start FS and check Json file (config.json)
         module.mountFS();
+        module.printJSON();
 
     // Load Json file stored values
         parseJSON();
@@ -111,13 +126,30 @@ void setup() {
         snprintf(global.deviceName,(sizeof(global.deviceName)-1),"probatio_m5_%03i",settings.id);
 
     // Connect to WiFi, web server, and start dns server
-            module.scanWiFi(global.deviceName, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
-            module.startWifi(global.deviceName, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
-            Serial.println("Starting DNS server");
-            dnsServer.start(53, "*", WiFi.softAPIP());
-            start_mdns_service();
-            initWebServer();
-        
+        module.scanWiFi(global.deviceName, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
+        module.startWifi(global.deviceName, settings.APpasswd, settings.lastConnectedNetwork, settings.lastStoredPsk);
+        Serial.println("Starting DNS server");
+        dnsServer.start(53, "*", WiFi.softAPIP());
+        start_mdns_service();
+        initWebServer();
+
+    // Create device for libmapper
+        if (WiFi.status() == WL_CONNECTED) {
+            std::string str = global.deviceName;
+            dev = new mapper::Device(str);
+        }
+
+    // Create signal for libmapper
+    signal = dev->add_signal(mapper::Direction::OUTGOING, "data", 5, mapper::Type::INT32, 0, &lm_min, &lm_max);
+    // for (int i = 0; i < NUM_SIGNALS; ++i) {
+    //     std::ostringstream sigName;
+    //     sigName << "test" << i;
+    //     float lm_min = 0.0f;
+    //     float lm_max = 5.0f;
+    //     signals.push_back(dev->add_signal(mapper::Direction::OUTGOING, sigName.str(), 1,
+    //                                     mapper::Type::FLOAT, "V", &lm_min, &lm_max));
+    // }
+
     Serial.println("\n\nBoot complete\n\n");
 }
 
@@ -136,6 +168,28 @@ void loop() {
     //debugDumpBuffer();
     //sendIndividualOSCMessages(global.deviceName, settings.oscIP, settings.oscPORT);
     sendConsolidatedOSCMessage(global.deviceName, settings.oscIP, settings.oscPORT);
+
+    Serial.println("aqui");
+
+    // Do libmapper stuff
+    dev->poll();
+    // for (int i = 0; i < NUM_SIGNALS; ++i) {
+    //     signals[i].set_value(i);
+    // }
+        Serial.println("aqui2");
+    lmbuffer.clear();
+        Serial.println("aqui3");
+    for (int i = 0; i < QUANTITY_BLOCKS; i++) {
+            if (blocks[i]->isConnected) {
+                    Serial.println("aqui4");
+                for (int j = 0; j < blocks[i]->quantity; i++) {
+                        Serial.println("aqui5");
+                    lmbuffer.push_back((int)blocks[i]->values[j].getValue());
+                }
+            }
+        }
+    signal.set_value(lmbuffer);
+
 
     // long t1 = millis();
     // long deltaT = (t1 - t0);
@@ -188,17 +242,6 @@ void printVariablesRaw() {
     Serial.println();
 }
 
-struct SpiRamAllocator {
-    void* allocate(size_t size) {
-        return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
-    }
-    void deallocate(void* pointer) {
-        heap_caps_free(pointer);
-    }
-};
-
-using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
-
 void parseJSON() {    
   /* 
   Allocate a temporary JsonDocument
@@ -207,35 +250,38 @@ void parseJSON() {
     const size_t capacity = JSON_OBJECT_SIZE(15) + 250;
     DynamicJsonDocument doc(capacity);
   */
-  SpiRamJsonDocument doc(1048576);
+    StaticJsonDocument<192> doc;
 
     if (SPIFFS.exists("/config.json")) { // file exists, reading and loading
         
         Serial.println("Reading config file...");
+        
         File configFile = SPIFFS.open("/config.json", "r");
         
         // Deserialize the JSON document
+        StaticJsonDocument<384> doc;
         DeserializationError error = deserializeJson(doc, configFile);
-        if (error)
-            Serial.println("Failed to read file!\n");
-        else {
-            // Copy values from the JsonDocument to the Config
-            settings.id = doc["id"];
-            strlcpy(settings.author, doc["author"], sizeof(settings.author));
-            strlcpy(settings.institution, doc["institution"], sizeof(settings.institution));
-            strlcpy(settings.APpasswd, doc["APpasswd"], sizeof(settings.APpasswd));
-            strlcpy(settings.lastConnectedNetwork, doc["lastConnectedNetwork"], sizeof(settings.lastConnectedNetwork));
-            strlcpy(settings.lastStoredPsk, doc["lastStoredPsk"], sizeof(settings.lastStoredPsk));
-            settings.firmware = doc["firmware"];
-            strlcpy(settings.oscIP, doc["oscIP"], sizeof(settings.oscIP));
-            settings.oscPORT = doc["oscPORT"];
-            settings.localPORT = doc["localPORT"];
-
-            configFile.close();
-            
-            Serial.println("Probatio configuration file loaded.\n");
+        if (error) {
+            Serial.print(F("deserializeJson() failed: "));
+            Serial.println(error.f_str());
+            return;
         }
-        } 
+        // Copy values from the JsonDocument to the Config
+        settings.id = doc["id"];
+        strlcpy(settings.author, doc["author"], sizeof(settings.author));
+        strlcpy(settings.institution, doc["institution"], sizeof(settings.institution));
+        strlcpy(settings.APpasswd, doc["APpasswd"], sizeof(settings.APpasswd));
+        strlcpy(settings.lastConnectedNetwork, doc["lastConnectedNetwork"], sizeof(settings.lastConnectedNetwork));
+        strlcpy(settings.lastStoredPsk, doc["lastStoredPsk"], sizeof(settings.lastStoredPsk));
+        settings.firmware = doc["firmware"];
+        strlcpy(settings.oscIP, doc["oscIP"], sizeof(settings.oscIP));
+        settings.oscPORT = doc["oscPORT"];
+        settings.localPORT = doc["localPORT"];
+
+        configFile.close();
+        
+        Serial.println("Probatio configuration file loaded.\n");
+    } 
     else
         Serial.println("Failed to read config file!\n");
     }
@@ -253,7 +299,7 @@ void saveJSON() { // Serializing
         DynamicJsonDocument doc(capacity);
     */
 
-    SpiRamJsonDocument doc(1048576);
+    StaticJsonDocument<256> doc;
 
     // Copy values from Config to the JsonDocument
         doc["id"] = settings.id;
@@ -433,6 +479,11 @@ void initWebServer() {
   // Route for scan page
     server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request) {
       request->send(SPIFFS, "/scan.html", String(), false, scanProcessor);
+    });
+
+    // Route for instructions page
+    server.on("/instructions", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->send(SPIFFS, "/instructions.html");
     });
 
   // Route for factory page

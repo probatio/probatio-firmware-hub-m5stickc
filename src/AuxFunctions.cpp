@@ -134,7 +134,8 @@ void sendConsolidatedSerialMessage() {
 void sendIndividualOSCMessages(char* deviceName, char* destIP, int32_t destPort) {
     IPAddress oscIP;
     IPAddress emptyIP(0,0,0,0);
-    if (oscIP.fromString(destIP) && oscIP != emptyIP) {
+
+    if (oscIP.fromString(destIP) && oscIP != emptyIP && WiFi.status() == WL_CONNECTED) {
         for (int i = 0; i < QUANTITY_BLOCKS; i++) {
             if (blocks[i]->isConnected) {
                 //      String message_address = "/probatio_m5/";
@@ -148,9 +149,7 @@ void sendIndividualOSCMessages(char* deviceName, char* destIP, int32_t destPort)
                     oscMsg.add((int)blocks[i]->values[j].getValue());
                 }
                 oscMsg.send(udp);
-                if (isConnected) {
-                    udp.endPacket();
-                }
+                udp.endPacket();
             }
         }
     }
@@ -163,18 +162,19 @@ void sendIndividualOSCMessages(char* deviceName, char* destIP, int32_t destPort)
 */
 
 void sendConsolidatedOSCMessage(char* deviceName, char* destIP, int32_t destPort) {
+
     IPAddress oscIP;
     IPAddress emptyIP(0,0,0,0);
-    if (oscIP.fromString(destIP) && oscIP != emptyIP) {
+
+    if (oscIP.fromString(destIP) && oscIP != emptyIP && WiFi.status() == WL_CONNECTED) {
+
         OSCMessage oscMsg(deviceName);
         udp.beginPacket(oscIP, destPort);
         for (int i = 0; i < BUFFER_SIZE; i++) {
             oscMsg.add((int)buffer[i]);
         }
         oscMsg.send(udp);
-        if (isConnected) {
-            udp.endPacket();
-        }
+        udp.endPacket();
     }
 }
 
