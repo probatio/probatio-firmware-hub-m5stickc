@@ -2,33 +2,43 @@
 // Filipe Calegario (2020)
 // Edu Meneses - IDMIL - McGill University (2021)
 
-const unsigned int firmware_version = 210525;
+/*
+This whole code needs some cleaning. I suggest a more C++ style,
+maybe migrating to C++ Modules. 
+Also, i did some workaround on Block.h and Block.cpp to deal 
+with the block names. 
+Also also, the AuxFunctions separation is not a great idea, unless
+we modify it into a "Probatio library" (and include properly).
+Edu Meneses - 2021/05/31
+*/
+
+const unsigned int firmware_version = 210531;
 
 #include <Arduino.h>
 
 #include <Update.h>     // For OTA over web server (manual .bin upload)
 #include "mdns.h"
 
+// Direct OSC Version: sends 44 integers for each sensor
+// Needs hardcoding of IP, port, and SSID
+
+
+#include "AuxFunctions.h"
+
 // Libmapper-arduino (https://github.com/mathiasbredholt/libmapper-arduino)
 #include <mapper_cpp.h>
 #include <string>
 #include <vector>
 #include <algorithm>
-//#include <iterator> // for ostream_iterator
 mapper::Device* dev;
-mapper::Signal signal;
-//std::vector<mapper::Signal> signals;
-//const int NUM_SIGNALS = 32;
 int lm_min = 0;
 int lm_max = 256;
-std::vector<int> lmbuffer;
+std::vector<int> lm_min_values;
+std::vector<int> lm_max_values;
+mapper::Signal lm_Signals[QUANTITY_BLOCKS]; // needs probatio_defs.h (in AuxFunctions.h)
+std::vector<int> lm_Buffer;
 
-
-// Direct OSC Version: sends 44 integers for each sensor
-// Needs hardcoding of IP, port, and SSID
-
-#include <M5StickC.h>
-#include "AuxFunctions.h"
+#include <M5StickC.h> // needs to be included AFTER mapper_cpp.h
 
 #define SOFTAP 0
 #define D0 1
@@ -135,20 +145,9 @@ void setup() {
 
     // Create device for libmapper
         if (WiFi.status() == WL_CONNECTED) {
-            std::string str = global.deviceName;
-            dev = new mapper::Device(str);
+            std::string lm_name = global.deviceName;
+            dev = new mapper::Device(lm_name);
         }
-
-    // Create signal for libmapper
-    signal = dev->add_signal(mapper::Direction::OUTGOING, "data", 5, mapper::Type::INT32, 0, &lm_min, &lm_max);
-    // for (int i = 0; i < NUM_SIGNALS; ++i) {
-    //     std::ostringstream sigName;
-    //     sigName << "test" << i;
-    //     float lm_min = 0.0f;
-    //     float lm_max = 5.0f;
-    //     signals.push_back(dev->add_signal(mapper::Direction::OUTGOING, sigName.str(), 1,
-    //                                     mapper::Type::FLOAT, "V", &lm_min, &lm_max));
-    // }
 
     Serial.println("\n\nBoot complete\n\n");
 }
@@ -169,27 +168,35 @@ void loop() {
     //sendIndividualOSCMessages(global.deviceName, settings.oscIP, settings.oscPORT);
     sendConsolidatedOSCMessage(global.deviceName, settings.oscIP, settings.oscPORT);
 
-    Serial.println("aqui");
-
     // Do libmapper stuff
     dev->poll();
-    // for (int i = 0; i < NUM_SIGNALS; ++i) {
-    //     signals[i].set_value(i);
-    // }
-        Serial.println("aqui2");
-    lmbuffer.clear();
-        Serial.println("aqui3");
-    for (int i = 0; i < QUANTITY_BLOCKS; i++) {
-            if (blocks[i]->isConnected) {
-                    Serial.println("aqui4");
-                for (int j = 0; j < blocks[i]->quantity; i++) {
-                        Serial.println("aqui5");
-                    lmbuffer.push_back((int)blocks[i]->values[j].getValue());
-                }
-            }
-        }
-    signal.set_value(lmbuffer);
 
+    // Create signal for libmapper if block is connected and update signals
+    for (int i = 0; i < QUANTITY_BLOCKS; i++) {
+        if (blocks[i]->isConnected) {
+            if (!blocks[i]->libmapper) {
+                lm_min_values.clear();
+                lm_max_values.clear();
+                for (int k = 0; k < blocks[i]->quantity; k++) {
+                    lm_min_values.push_back(lm_min);
+                    lm_max_values.push_back(lm_max);
+                }
+                lm_Signals[i] = dev->add_signal(mapper::Direction::OUTGOING, blocks[i]->string_name.c_str(), 
+                                blocks[i]->quantity,mapper::Type::INT32, 0, &lm_min_values, &lm_max_values);
+                blocks[i]->libmapper = true;
+            } 
+            else {
+                lm_Buffer.clear();
+                for (int j = 0; j < blocks[i]->quantity; j++) {
+                    lm_Buffer.push_back((int)blocks[i]->values[j].getValue());
+                }
+                lm_Signals[i].set_value(lm_Buffer);
+            }
+        } else if (blocks[i]->libmapper) {
+            dev->remove_signal(lm_Signals[i]);
+            blocks[i]->libmapper = false;
+        }
+    }
 
     // long t1 = millis();
     // long deltaT = (t1 - t0);
